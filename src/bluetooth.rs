@@ -226,9 +226,22 @@ impl BtAddr {
         // Public address structure contents are always big-endian
         self
     }
+}
 
+impl ToString for BtAddr {
+    /// Converts `BtAddr` to a string of the format `XX:XX:XX:XX:XX:XX`.
+    fn to_string(&self) -> String {
+        format!(
+            "{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
+            self.0[0], self.0[1], self.0[2], self.0[3], self.0[4], self.0[5]
+        )
+    }
+}
+
+impl str::FromStr for BtAddr {
+    type Err = ();
     /// Converts a string of the format `XX:XX:XX:XX:XX:XX` to a `BtAddr`.
-    pub fn from_str(s: &str) -> Result<BtAddr, ()> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let splits_iter = s.split(':');
         let mut addr = BtAddr::any();
         let mut i = 0;
@@ -245,14 +258,6 @@ impl BtAddr {
             return Err(());
         }
         Ok(addr)
-    }
-
-    /// Converts `BtAddr` to a string of the format `XX:XX:XX:XX:XX:XX`.
-    pub fn to_string(self) -> String {
-        format!(
-            "{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
-            self.0[0], self.0[1], self.0[2], self.0[3], self.0[4], self.0[5]
-        )
     }
 }
 
@@ -292,6 +297,7 @@ impl BtDevice {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
 
     #[test()]
     fn btaddr_from_string() {

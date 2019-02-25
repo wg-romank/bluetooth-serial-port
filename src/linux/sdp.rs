@@ -91,12 +91,12 @@ struct sdp_val_union_t {
 }
 impl sdp_val_union_t {
     unsafe fn uint8(&mut self) -> *mut uint8_t {
-        let raw: *mut u8 = ::std::mem::transmute(&self._bindgen_data_);
+        let raw: *mut u8 = mem::transmute(&self._bindgen_data_);
         raw.offset(0)
     }
     unsafe fn uuid(&mut self) -> *mut uuid_t {
-        let raw: *mut u8 = ::std::mem::transmute(&self._bindgen_data_);
-        ::std::mem::transmute(raw.offset(0))
+        let raw: *mut u8 = mem::transmute(&self._bindgen_data_);
+        mem::transmute(raw.offset(0))
     }
 }
 
@@ -327,22 +327,22 @@ impl QueryRFCOMMChannel {
 
                 scanned += record_size;
                 pdata = unsafe { pdata.offset(record_size as isize) };
-                pdata_len = pdata_len - record_size;
+                pdata_len -= record_size;
 
                 // get a list of the protocol sequences
                 let mut proto_list: *mut sdp_list_t = ptr::null_mut();
                 if unsafe { sdp_get_access_protos(record, &mut proto_list) } == 0 {
                     let mut p = proto_list;
 
-                    while p != ptr::null_mut() {
+                    while !p.is_null() {
                         let mut pds: *mut sdp_list_t = unsafe { mem::transmute((*p).data) };
 
                         // go through each protocol list of the protocol sequence
-                        while pds != ptr::null_mut() {
+                        while !pds.is_null() {
                             // check the protocol attributes
                             let mut d: *mut sdp_data_t = unsafe { mem::transmute((*pds).data) };
                             let mut proto: Option<c_int> = None;
-                            while d != ptr::null_mut() {
+                            while !d.is_null() {
                                 match SdpPdu::from_u8(unsafe { *d }.dtd).unwrap_or_else(
                                     || /* something that does not do anything = */ SdpPdu::DataNil,
                                 ) {
@@ -389,11 +389,11 @@ impl QueryRFCOMMChannel {
             }};
         };
 
-        match &self.state {
-            &QueryRFCOMMChannelState::New => {
+        match self.state {
+            QueryRFCOMMChannelState::New => {
                 let flags = SdpConnectFlags::NonBlocking as u32;
                 self.session = unsafe { sdp_connect(&BtAddr::any(), &self.addr, flags) };
-                if self.session == ptr::null_mut() {
+                if self.session.is_null() {
                     return Err(create_error_from_last(
                         "sdp_connect(): Bluetooth device not accessible",
                     ));
@@ -403,7 +403,7 @@ impl QueryRFCOMMChannel {
                 Ok(QueryRFCOMMChannelStatus::WaitWritable(get_fd!()))
             }
 
-            &QueryRFCOMMChannelState::Connecting => {
+            QueryRFCOMMChannelState::Connecting => {
                 // specify the UUID of the application we're searching for
                 let mut service_uuid = uuid_t::default();
                 unsafe { sdp_uuid16_create(&mut service_uuid, SdpProfile::SerialPort as u16) };
@@ -449,7 +449,7 @@ impl QueryRFCOMMChannel {
                 Ok(QueryRFCOMMChannelStatus::WaitReadable(get_fd!()))
             }
 
-            &QueryRFCOMMChannelState::WaitForData => {
+            QueryRFCOMMChannelState::WaitForData => {
                 let status = unsafe { sdp_process(self.session) };
                 if status < 0 {
                     // Transaction completed – parsing function should have already been called
@@ -474,7 +474,7 @@ impl QueryRFCOMMChannel {
                 }
             }
 
-            &QueryRFCOMMChannelState::Done => {
+            QueryRFCOMMChannelState::Done => {
                 panic!("Trying advance `QueryRFCOMMChannel` from `Done` state");
             }
         }

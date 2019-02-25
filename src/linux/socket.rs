@@ -171,8 +171,8 @@ impl<'a> BtSocketConnect<'a> {
     }
 
     pub fn advance(&mut self) -> Result<BtAsync, BtError> {
-        match &self.state {
-            &BtSocketConnectState::SDPSearch => {
+        match self.state {
+            BtSocketConnectState::SDPSearch => {
                 match self.query.advance()? {
                     // Forward SDP's pleas for another round
                     QueryRFCOMMChannelStatus::WaitReadable(fd) => {
@@ -213,7 +213,7 @@ impl<'a> BtSocketConnect<'a> {
                 }
             }
 
-            &BtSocketConnectState::Connect => {
+            BtSocketConnectState::Connect => {
                 // First check if socket is actually connected using `getpeername()`
                 let mut full_address: sockaddr_rc = sockaddr_rc {
                     rc_family: AF_BLUETOOTH as u16,
@@ -242,7 +242,7 @@ impl<'a> BtSocketConnect<'a> {
                 }
             }
 
-            &BtSocketConnectState::Done => {
+            BtSocketConnectState::Done => {
                 panic!("Trying advance `BtSocketConnect` from `Done` state");
             }
         }
