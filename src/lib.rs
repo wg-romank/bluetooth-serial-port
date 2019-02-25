@@ -28,5 +28,5 @@ mod platform {
     pub use crate::linux::*;
 
     #[cfg(target_os = "windows")]
-    pub use windows::*;
+    pub use crate::windows::*;
 }

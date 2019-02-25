@@ -1,7 +1,5 @@
-use bluetooth::{BtAddr, BtAsync, BtDevice, BtError, BtProtocol};
-use mio;
+use crate::bluetooth::{BtAddr, BtAsync, BtDevice, BtError, BtProtocol};
 use mio::{Poll, Ready};
-use std;
 use std::io::{Read, Write};
 
 #[derive(Debug)]
