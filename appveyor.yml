@@ -2,7 +2,6 @@ environment:
   RUST_CHANNEL: stable
   matrix:
   - TARGET: msvc
-    LLVM_VERSION: 5.0.2
 platform:
   - x64
   - x86
