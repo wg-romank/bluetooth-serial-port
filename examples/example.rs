@@ -1,13 +1,18 @@
 use bluetooth_serial_port::{BtProtocol, BtSocket};
 use mio::{Poll, PollOpt, Ready, Token};
-use std::io::{Read, Write};
+use std::{
+    io::{Read, Write},
+    time,
+};
 
 fn main() {
     // scan for devices
-    let devices = bluetooth_serial_port::scan_devices().unwrap();
+    let devices = bluetooth_serial_port::scan_devices(time::Duration::from_secs(20)).unwrap();
     if devices.len() == 0 {
         panic!("No devices found");
     }
+
+    println!("Found bluetooth devices {:?}", devices);
 
     // "device.addr" is the MAC address of the device
     let device = &devices[0];

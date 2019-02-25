@@ -1,8 +1,7 @@
-use mio;
-use std;
-use std::io::{Read, Write};
-use std::result::Result;
-use std::str;
+use std::{
+    io::{Read, Write},
+    str, time,
+};
 
 use crate::platform;
 
@@ -150,8 +149,8 @@ impl<'a> BtSocketConnect<'a> {
 /// Finds a vector of Bluetooth devices in range.
 ///
 /// This function blocks for some seconds.
-pub fn scan_devices() -> Result<Vec<BtDevice>, BtError> {
-    platform::scan_devices()
+pub fn scan_devices(timeout: time::Duration) -> Result<Vec<BtDevice>, BtError> {
+    platform::scan_devices(timeout)
 }
 
 /// Represents an error which occurred in this library.
@@ -342,6 +341,6 @@ mod tests {
     #[cfg(not(feature = "test_without_hardware"))]
     #[test()]
     fn scans_devices() {
-        scan_devices().unwrap();
+        scan_devices(time::Duration::from_secs(20)).unwrap();
     }
 }

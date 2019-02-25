@@ -1,6 +1,9 @@
 use crate::bluetooth::{BtAddr, BtAsync, BtDevice, BtError, BtProtocol};
 use mio::{Poll, Ready};
-use std::io::{Read, Write};
+use std::{
+    io::{Read, Write},
+    time,
+};
 
 #[derive(Debug)]
 #[allow(missing_copy_implementations)]
@@ -101,6 +104,6 @@ impl<'a> mio::Evented for BtSocketConnect<'a> {
     }
 }
 
-pub fn scan_devices() -> Result<Vec<BtDevice>, BtError> {
+pub fn scan_devices(timeout: time::Duration) -> Result<Vec<BtDevice>, BtError> {
     unimplemented!()
 }

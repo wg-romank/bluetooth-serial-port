@@ -3,7 +3,7 @@ use super::{ffi::*, socket::create_error_from_last};
 use crate::bluetooth::{BtAddr, BtDevice, BtError};
 
 use libc::close;
-use std::{ffi::CStr, mem, os::raw::*, ptr};
+use std::{ffi::CStr, mem, os::raw::*, ptr, time};
 
 #[repr(C, packed)]
 #[derive(Copy, Clone, Debug)]
@@ -50,7 +50,7 @@ extern "C" {
     ) -> c_int;
 }
 
-pub fn scan_devices() -> Result<Vec<BtDevice>, BtError> {
+pub fn scan_devices(timeout: time::Duration) -> Result<Vec<BtDevice>, BtError> {
     let device_id = unsafe { hci_get_route(ptr::null_mut()) };
     if device_id < 0 {
         return Err(create_error_from_last(
@@ -67,7 +67,21 @@ pub fn scan_devices() -> Result<Vec<BtDevice>, BtError> {
 
     let mut inquiry_infos = ::std::vec::from_elem(InquiryInfo::default(), 256);
 
-    let timeout = 1; // 1.28 sec
+    let timeout_secs = timeout.as_secs();
+    let max_secs = u64::from(u32::max_value());
+    let timeout_secs = if timeout_secs > max_secs {
+        return Err(BtError::Desc(format!(
+            "Timeout value too big {} > {}",
+            timeout_secs, max_secs
+        )));
+    } else {
+        timeout_secs as u32
+    };
+
+    let timeout = ((f64::from(timeout_secs) + f64::from(timeout.subsec_nanos()) / 1_000_000_000.)
+        / 1.28)
+        .round();
+    let timeout = timeout.min(f64::from(c_int::max_value())).max(1.) as c_int;
     let flags = IREQ_CACHE_FLUSH;
 
     let mut inquiry_info = inquiry_infos.as_mut_ptr();
