@@ -3,7 +3,16 @@ use super::{ffi::*, socket::create_error_from_last};
 use crate::bluetooth::{BtAddr, BtDevice, BtError};
 
 use libc::close;
-use std::{ffi::CStr, mem, os::raw::*, ptr, time};
+use std::{
+    ffi::CStr,
+    mem,
+    os::raw::*,
+    os::unix::{
+        io::{AsRawFd, FromRawFd, IntoRawFd},
+        net::UnixStream,
+    },
+    ptr, time, vec,
+};
 
 #[repr(C, packed)]
 #[derive(Copy, Clone, Debug)]
@@ -65,7 +74,9 @@ pub fn scan_devices(timeout: time::Duration) -> Result<Vec<BtDevice>, BtError> {
         ));
     }
 
-    let mut inquiry_infos = ::std::vec::from_elem(InquiryInfo::default(), 256);
+    let local_socket = unsafe { UnixStream::from_raw_fd(local_socket) };
+
+    let mut inquiry_infos = vec::from_elem(InquiryInfo::default(), 256);
 
     let timeout_secs = timeout.as_secs();
     let max_secs = u64::from(u32::max_value());
@@ -108,7 +119,7 @@ pub fn scan_devices(timeout: time::Duration) -> Result<Vec<BtDevice>, BtError> {
         let mut cname = [0; 256];
         let name = if unsafe {
             hci_read_remote_name(
-                local_socket,
+                local_socket.as_raw_fd(),
                 &inquiry_info.bdaddr,
                 cname.len() as c_int,
                 &mut cname[0],
@@ -129,6 +140,7 @@ pub fn scan_devices(timeout: time::Duration) -> Result<Vec<BtDevice>, BtError> {
         })
     }
 
+    let local_socket = local_socket.into_raw_fd();
     if unsafe { close(local_socket) } < 0 {
         return Err(create_error_from_last("close()"));
     }
