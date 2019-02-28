@@ -407,13 +407,18 @@ impl QueryRFCOMMChannel {
                 // specify the UUID of the application we're searching for
                 let mut service_uuid = uuid_t::default();
                 unsafe { sdp_uuid16_create(&mut service_uuid, SdpProfile::SerialPort as u16) };
-                let search_list =
-                    unsafe { sdp_list_append(ptr::null_mut(), mem::transmute(&mut service_uuid)) };
+                let search_list = unsafe {
+                    sdp_list_append(
+                        ptr::null_mut(),
+                        &mut service_uuid as *mut uuid_t as *mut c_void,
+                    )
+                };
 
                 // specify that we want a list of all the matching applications' attributes
                 let mut range = 0x0000_FFFFu32;
-                let attrid_list =
-                    unsafe { sdp_list_append(ptr::null_mut(), mem::transmute(&mut range)) };
+                let attrid_list = unsafe {
+                    sdp_list_append(ptr::null_mut(), &mut range as *mut u32 as *mut c_void)
+                };
 
                 // register for notification once all data has been parsed
                 let this_ptr: *mut Self = self;
@@ -429,6 +434,10 @@ impl QueryRFCOMMChannel {
                         SdpAttrReqType::Range,
                         attrid_list,
                     );
+
+                    sdp_list_free(search_list, ptr::null());
+                    sdp_list_free(attrid_list, ptr::null());
+
                     if status < 0 {
                         Err(create_error_from_last(
                             "sdp_service_search_attr_async(): Sending service record search request failed",
@@ -437,10 +446,6 @@ impl QueryRFCOMMChannel {
                         Ok(())
                     }
                 };
-
-                // make sure data is freed before acting upon the result of the previous operation
-                unsafe { sdp_list_free(search_list, ptr::null()) };
-                unsafe { sdp_list_free(attrid_list, ptr::null()) };
 
                 // quit if sending service request failed
                 result?;
