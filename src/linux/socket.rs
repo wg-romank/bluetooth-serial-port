@@ -78,7 +78,7 @@ impl BtSocket {
         }
     }
 
-    pub fn connect<'a>(&'a mut self, addr: BtAddr) -> BtSocketConnect<'a> {
+    pub fn connect(&mut self, addr: BtAddr) -> BtSocketConnect {
         let addr = addr.convert_host_byteorder();
 
         BtSocketConnect::new(self, addr)
@@ -187,7 +187,7 @@ impl<'a> BtSocketConnect<'a> {
 
                     // Received channel number, start actual connection
                     QueryRFCOMMChannelStatus::Done(channel) => {
-                        let full_address: sockaddr_rc = sockaddr_rc {
+                        let full_address = sockaddr_rc {
                             rc_family: AF_BLUETOOTH as u16,
                             rc_bdaddr: self.addr,
                             rc_channel: channel,
@@ -197,7 +197,7 @@ impl<'a> BtSocketConnect<'a> {
                         if unsafe {
                             libc::connect(
                                 self.pollfd,
-                                mem::transmute(&full_address),
+                                &full_address as *const sockaddr_rc as *const libc::sockaddr,
                                 mem::size_of::<sockaddr_rc>() as u32,
                             )
                         } < 0
@@ -215,14 +215,18 @@ impl<'a> BtSocketConnect<'a> {
 
             BtSocketConnectState::Connect => {
                 // First check if socket is actually connected using `getpeername()`
-                let mut full_address: sockaddr_rc = sockaddr_rc {
+                let mut full_address = sockaddr_rc {
                     rc_family: AF_BLUETOOTH as u16,
                     rc_bdaddr: BtAddr::any(),
                     rc_channel: 0,
                 };
-                let mut socklen: libc::socklen_t = mem::size_of::<sockaddr_rc>() as libc::socklen_t;
+                let mut socklen = mem::size_of::<sockaddr_rc>() as libc::socklen_t;
                 if unsafe {
-                    libc::getpeername(self.pollfd, mem::transmute(&mut full_address), &mut socklen)
+                    libc::getpeername(
+                        self.pollfd,
+                        &mut full_address as *mut sockaddr_rc as *mut libc::sockaddr,
+                        &mut socklen,
+                    )
                 } < 0
                 {
                     if nix::errno::Errno::last() == nix::errno::Errno::ENOTCONN {

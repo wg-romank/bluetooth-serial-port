@@ -91,12 +91,11 @@ struct sdp_val_union_t {
 }
 impl sdp_val_union_t {
     unsafe fn uint8(&mut self) -> *mut uint8_t {
-        let raw: *mut u8 = mem::transmute(&self._bindgen_data_);
+        let raw: *mut u8 = &mut self._bindgen_data_ as *mut [u64; 3] as *mut u8;
         raw.offset(0)
     }
     unsafe fn uuid(&mut self) -> *mut uuid_t {
-        let raw: *mut u8 = mem::transmute(&self._bindgen_data_);
-        mem::transmute(raw.offset(0))
+        &mut self._bindgen_data_ as *mut [u64; 3] as *mut uuid_t
     }
 }
 
@@ -335,12 +334,12 @@ impl QueryRFCOMMChannel {
                     let mut p = proto_list;
 
                     while !p.is_null() {
-                        let mut pds: *mut sdp_list_t = unsafe { mem::transmute((*p).data) };
+                        let mut pds = unsafe { (*p).data } as *mut sdp_list_t;
 
                         // go through each protocol list of the protocol sequence
                         while !pds.is_null() {
                             // check the protocol attributes
-                            let mut d: *mut sdp_data_t = unsafe { mem::transmute((*pds).data) };
+                            let mut d = unsafe { (*pds).data } as *mut sdp_data_t;
                             let mut proto: Option<c_int> = None;
                             while !d.is_null() {
                                 match SdpPdu::from_u8(unsafe { *d }.dtd).unwrap_or_else(
@@ -362,7 +361,7 @@ impl QueryRFCOMMChannel {
                             pds = unsafe { *pds }.next;
                         }
 
-                        unsafe { sdp_list_free(mem::transmute((*p).data), ptr::null()) };
+                        unsafe { sdp_list_free((*p).data as *mut sdp_list_t, ptr::null()) };
                         p = unsafe { *p }.next;
                     }
 
