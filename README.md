@@ -1,4 +1,4 @@
-# bluetooth-serial-port
+# bluetooth-serial-port [![Build Status](https://travis-ci.org/Dushistov/bluetooth-serial-port.svg?branch=master)](https://travis-ci.org/Dushistov/bluetooth-serial-port) [![Build status](https://ci.appveyor.com/api/projects/status/uyg280ku24iau8g3/branch/master?svg=true)](https://ci.appveyor.com/project/Dushistov/bluetooth-serial-port/branch/master)
 
 Rust library for interacting with the Bluetooth stack via RFCOMM channels.
 
@@ -26,3 +26,7 @@ impl mio::Evented for BtSocket { ... } // for async IO with mio
 ```
 
 [Click here](examples/example.rs) for full example.
+
+## API Reference
+
+[API reference documentation is on docs.rs](https://docs.rs/bluetooth-serial-port)
