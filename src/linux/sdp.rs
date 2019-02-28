@@ -467,7 +467,7 @@ impl QueryRFCOMMChannel {
                     if unsafe { sdp_close(self.session) } < 0 {
                         return Err(create_error_from_last("sdp_close()"));
                     }
-
+                    self.session = ptr::null_mut();
                     self.state = QueryRFCOMMChannelState::Done;
                     match self.response.take().unwrap() {
                         Ok(channel) => Ok(QueryRFCOMMChannelStatus::Done(channel)),
@@ -482,6 +482,14 @@ impl QueryRFCOMMChannel {
             QueryRFCOMMChannelState::Done => {
                 panic!("Trying advance `QueryRFCOMMChannel` from `Done` state");
             }
+        }
+    }
+}
+
+impl Drop for QueryRFCOMMChannel {
+    fn drop(&mut self) {
+        if !self.session.is_null() {
+            let _ = unsafe { sdp_close(self.session) };
         }
     }
 }
