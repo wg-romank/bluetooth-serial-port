@@ -85,6 +85,11 @@ impl BtSocket {
 
         BtSocketConnect::new(self, addr)
     }
+    /// Moves this bluetoothm socket into or out of nonblocking mode.
+    pub fn set_nonblocking(&self, nonblocking: bool) -> Result<(), BtError> {
+        self.stream.set_nonblocking(nonblocking)?;
+        Ok(())
+    }
 }
 
 impl From<nix::Error> for BtError {
