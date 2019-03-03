@@ -154,7 +154,7 @@ pub fn scan_devices(timeout: time::Duration) -> Result<Vec<BtDevice>, BtError> {
 }
 
 /// Represents an error which occurred in this library.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum BtError {
     /// No specific information is known.
     Unknown,
@@ -164,6 +164,9 @@ pub enum BtError {
 
     /// This error only has a description.
     Desc(String),
+
+    /// `std::io::Error`
+    IoError(std::io::Error),
 }
 
 impl std::fmt::Display for BtError {
@@ -178,7 +181,14 @@ impl std::error::Error for BtError {
             BtError::Unknown => "Unknown Bluetooth Error",
             BtError::Errno(_, ref message) => message.as_str(),
             BtError::Desc(ref message) => message.as_str(),
+            BtError::IoError(ref err) => err.description(),
         }
+    }
+}
+
+impl From<std::io::Error> for BtError {
+    fn from(error: std::io::Error) -> Self {
+        BtError::IoError(error)
     }
 }
 

@@ -53,12 +53,14 @@ struct sockaddr_rc {
     rc_channel: u8,
 }
 
+/// Linux (Bluez) socket, created with AF_BLUETOOTH
 #[derive(Debug)]
 pub struct BtSocket {
     stream: UnixStream,
 }
 
 impl BtSocket {
+    /// Create an (still) unconnected socket, like `crate::BtSocket`
     pub fn new(proto: BtProtocol) -> Result<BtSocket, BtError> {
         match proto {
             BtProtocol::RFCOMM => {
@@ -77,7 +79,7 @@ impl BtSocket {
             }
         }
     }
-
+    /// Initiate connection
     pub fn connect(&mut self, addr: BtAddr) -> BtSocketConnect {
         let addr = addr.convert_host_byteorder();
 
@@ -151,6 +153,7 @@ enum BtSocketConnectState {
     Done,
 }
 
+/// Manages the bluetooth connection process when used from an asynchronous client.
 #[derive(Debug)]
 pub struct BtSocketConnect<'a> {
     addr: BtAddr,
@@ -160,7 +163,7 @@ pub struct BtSocketConnect<'a> {
     query: QueryRFCOMMChannel,
 }
 impl<'a> BtSocketConnect<'a> {
-    pub fn new(socket: &'a mut BtSocket, addr: BtAddr) -> Self {
+    fn new(socket: &'a mut BtSocket, addr: BtAddr) -> Self {
         BtSocketConnect {
             addr,
             pollfd: 0,
@@ -169,7 +172,7 @@ impl<'a> BtSocketConnect<'a> {
             state: BtSocketConnectState::SDPSearch,
         }
     }
-
+    /// Advance the connection process to the next state
     pub fn advance(&mut self) -> Result<BtAsync, BtError> {
         match self.state {
             BtSocketConnectState::SDPSearch => {

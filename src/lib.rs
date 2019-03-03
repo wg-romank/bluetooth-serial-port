@@ -29,3 +29,12 @@ mod platform {
     #[cfg(target_os = "windows")]
     pub use crate::windows::*;
 }
+
+/// OS-specific functionality
+pub mod os {
+    /// Linux-specific definitions
+    #[cfg(target_os = "linux")]
+    pub mod linux {
+        pub use crate::linux::{BtSocket, BtSocketConnect};
+    }
+}
