@@ -349,7 +349,9 @@ impl QueryRFCOMMChannel {
                                         proto = Some(unsafe { sdp_uuid_to_proto((*d).val.uuid()) });
                                     }
                                     SdpPdu::Uint8 => {
-                                        if proto == Some(SdpProtoUuid::Rfcomm as c_int) {
+                                        if proto == Some(SdpProtoUuid::Rfcomm as c_int)
+                                            && channel.is_none()
+                                        {
                                             channel = Some(unsafe { *(*d).val.uint8() });
                                         }
                                     }
