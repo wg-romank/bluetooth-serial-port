@@ -1,9 +1,9 @@
 [package]
 name = "bluetooth-serial-port"
-version = "0.6.0-pre"
-authors = ["Christopher James Halse Rogers <raof@ubuntu.com>", "kaegi <kaegi.dev@gmail.com>"]
+version = "0.6.0"
+authors = ["Christopher James Halse Rogers <raof@ubuntu.com>", "kaegi <kaegi.dev@gmail.com>", "Evgeniy A. Dushistov <dushistov@mail.ru>"]
 description = "Interact with Bluetooth devices via RFCOMM channels"
-repository = "https://github.com/kaegi/bluetooth-serial-port"
+repository = "https://github.com/Dushistov/bluetooth-serial-port"
 readme = "README.md"
 keywords = ["bluetooth", "RFCOMM", "SDP", "SPP"]
 license = "MIT"
@@ -19,3 +19,8 @@ enum_primitive = "0.1"
 # Feature to disable any tests which rely on hardware availability
 # eg: tests which attempt to create a BtSocket.
 test_without_hardware = []
+
+[badges]
+travis-ci = { repository = "Dushistov/bluetooth-serial-port" }
+appveyor = { repository = "Dushistov/bluetooth-serial-port" }
+
