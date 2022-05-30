@@ -2,7 +2,6 @@ use super::sdp::{QueryRFCOMMChannel, QueryRFCOMMChannelStatus};
 use crate::bluetooth::{BtAddr, BtAsync, BtError, BtProtocol};
 use mio::{unix::EventedFd, Poll, Ready};
 use std::{
-    error::Error,
     io::{Read, Write},
     mem,
     os::unix::{
@@ -12,10 +11,10 @@ use std::{
 };
 
 pub fn create_error_from_errno(message: &str, errno: i32) -> BtError {
-    let nix_error = nix::Error::from_errno(nix::errno::from_i32(errno));
+    let nix_error = nix::errno::from_i32(errno);
     BtError::Errno(
-        errno as u32,
-        format!("{:}: {:}", message, nix_error.description()),
+        errno,
+        format!("{:}: {:}", message, nix_error),
     )
 }
 pub fn create_error_from_last(message: &str) -> BtError {
@@ -94,10 +93,7 @@ impl BtSocket {
 
 impl From<nix::Error> for BtError {
     fn from(e: nix::Error) -> BtError {
-        BtError::Errno(
-            e.as_errno().map(|x| x as u32).unwrap_or(0),
-            e.description().to_string(),
-        )
+        BtError::Errno(e as i32, e.to_string())
     }
 }
 

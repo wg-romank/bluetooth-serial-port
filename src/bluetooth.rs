@@ -123,7 +123,7 @@ impl Write for BtSocket {
 #[allow(missing_debug_implementations)] // `&mio::Evented` doesn't do `Debug`
 pub enum BtAsync<'a> {
     /// Caller needs to wait for the given `Evented` object to reach the given `Ready` state
-    WaitFor(&'a mio::Evented, mio::Ready),
+    WaitFor(&'a dyn mio::Evented, mio::Ready),
 
     /// Asynchronous transaction has completed
     Done,
@@ -160,7 +160,7 @@ pub enum BtError {
     Unknown,
 
     /// On Unix platforms: the error code and an explanation for this error code.
-    Errno(u32, String),
+    Errno(i32, String),
 
     /// This error only has a description.
     Desc(String),
@@ -171,18 +171,7 @@ pub enum BtError {
 
 impl std::fmt::Display for BtError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{:}", std::error::Error::description(self))
-    }
-}
-
-impl std::error::Error for BtError {
-    fn description(&self) -> &str {
-        match self {
-            BtError::Unknown => "Unknown Bluetooth Error",
-            BtError::Errno(_, ref message) => message.as_str(),
-            BtError::Desc(ref message) => message.as_str(),
-            BtError::IoError(ref err) => err.description(),
-        }
+        write!(f, "{:}", self)
     }
 }
 
@@ -309,7 +298,7 @@ mod tests {
     use super::*;
     use std::str::FromStr;
 
-    #[test()]
+    #[test]
     fn btaddr_from_string() {
         match BtAddr::from_str("00:00:00:00:00:00") {
             Ok(addr) => assert_eq!(addr, BtAddr([0u8; 6])),
@@ -331,13 +320,13 @@ mod tests {
         }
     }
 
-    #[test()]
+    #[test]
     fn btaddr_to_string() {
         assert_eq!(BtAddr::any().to_string(), "00:00:00:00:00:00");
         assert_eq!(BtAddr([1, 2, 3, 4, 5, 6]).to_string(), "01:02:03:04:05:06");
     }
 
-    #[test()]
+    #[test]
     fn btaddr_roundtrips_to_from_str() {
         let addr = BtAddr([0, 22, 4, 1, 33, 192]);
         let addr_string = "00:ff:ee:ee:dd:12";
@@ -349,13 +338,13 @@ mod tests {
     }
 
     #[cfg(not(feature = "test_without_hardware"))]
-    #[test()]
+    #[test]
     fn creates_rfcomm_socket() {
         BtSocket::new(BtProtocol::RFCOMM).unwrap();
     }
 
     #[cfg(not(feature = "test_without_hardware"))]
-    #[test()]
+    #[test]
     fn scans_devices() {
         scan_devices(time::Duration::from_secs(20)).unwrap();
     }
