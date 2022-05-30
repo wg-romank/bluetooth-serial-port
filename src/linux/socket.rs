@@ -1,14 +1,14 @@
 use super::sdp::{QueryRFCOMMChannel, QueryRFCOMMChannelStatus};
 use crate::bluetooth::{BtAddr, BtAsync, BtError, BtProtocol};
-use mio::{unix::EventedFd, Poll, Ready};
-use std::{
-    io::{Read, Write},
-    mem,
-    os::unix::{
-        io::{AsRawFd, FromRawFd, RawFd},
-        net::UnixStream,
-    },
-};
+use std;
+use std::io::{Read, Write};
+use std::mem;
+use std::os::unix::io::{AsRawFd, FromRawFd, RawFd};
+use mio::{Interest, Registry};
+use std::os::unix::net::UnixStream;
+use mio::unix::SourceFd;
+
+
 
 pub fn create_error_from_errno(message: &str, errno: i32) -> BtError {
     let nix_error = nix::errno::from_i32(errno);
@@ -105,29 +105,17 @@ impl From<RawFd> for BtSocket {
     }
 }
 
-impl mio::Evented for BtSocket {
-    fn register(
-        &self,
-        poll: &Poll,
-        token: mio::Token,
-        interest: Ready,
-        opts: mio::PollOpt,
-    ) -> std::io::Result<()> {
-        EventedFd(&self.stream.as_raw_fd()).register(poll, token, interest, opts)
+impl mio::event::Source for BtSocket {
+    fn register(&mut self, poll: &Registry, token: mio::Token, interest: Interest) -> std::io::Result<()> {
+        SourceFd(&self.stream.as_raw_fd()).register(poll, token, interest)
     }
 
-    fn reregister(
-        &self,
-        poll: &Poll,
-        token: mio::Token,
-        interest: Ready,
-        opts: mio::PollOpt,
-    ) -> std::io::Result<()> {
-        EventedFd(&self.stream.as_raw_fd()).reregister(poll, token, interest, opts)
+    fn reregister(&mut self, poll: &Registry, token: mio::Token, interest: Interest) -> std::io::Result<()> {
+        SourceFd(&self.stream.as_raw_fd()).reregister(poll, token, interest)
     }
 
-    fn deregister(&self, poll: &Poll) -> std::io::Result<()> {
-        EventedFd(&self.stream.as_raw_fd()).deregister(poll)
+    fn deregister(&mut self, poll: &Registry) -> std::io::Result<()> {
+        SourceFd(&self.stream.as_raw_fd()).deregister(poll)
     }
 }
 
@@ -181,12 +169,12 @@ impl<'a> BtSocketConnect<'a> {
                     // Forward SDP's pleas for another round
                     QueryRFCOMMChannelStatus::WaitReadable(fd) => {
                         self.pollfd = fd;
-                        Ok(BtAsync::WaitFor(self, Ready::readable()))
+                        Ok(BtAsync::WaitFor(self, Interest::READABLE))
                     }
 
                     QueryRFCOMMChannelStatus::WaitWritable(fd) => {
                         self.pollfd = fd;
-                        Ok(BtAsync::WaitFor(self, Ready::writable()))
+                        Ok(BtAsync::WaitFor(self, Interest::WRITABLE))
                     }
 
                     // Received channel number, start actual connection
@@ -211,7 +199,7 @@ impl<'a> BtSocketConnect<'a> {
                             ))
                         } else {
                             self.state = BtSocketConnectState::Connect;
-                            Ok(BtAsync::WaitFor(self, Ready::writable()))
+                            Ok(BtAsync::WaitFor(self, Interest::WRITABLE))
                         }
                     }
                 }
@@ -257,28 +245,16 @@ impl<'a> BtSocketConnect<'a> {
     }
 }
 
-impl<'a> mio::Evented for BtSocketConnect<'a> {
-    fn register(
-        &self,
-        poll: &Poll,
-        token: mio::Token,
-        interest: Ready,
-        opts: mio::PollOpt,
-    ) -> std::io::Result<()> {
-        EventedFd(&self.pollfd).register(poll, token, interest, opts)
+impl<'a> mio::event::Source for BtSocketConnect<'a> {
+    fn register(&mut self, poll: &Registry, token: mio::Token, interest: Interest) -> std::io::Result<()> {
+        SourceFd(&self.pollfd).register(poll, token, interest)
     }
 
-    fn reregister(
-        &self,
-        poll: &Poll,
-        token: mio::Token,
-        interest: Ready,
-        opts: mio::PollOpt,
-    ) -> std::io::Result<()> {
-        EventedFd(&self.pollfd).reregister(poll, token, interest, opts)
+    fn reregister(&mut self, poll: &Registry, token: mio::Token, interest: Interest) -> std::io::Result<()> {
+        SourceFd(&self.pollfd).reregister(poll, token, interest)
     }
 
-    fn deregister(&self, poll: &Poll) -> std::io::Result<()> {
-        EventedFd(&self.pollfd).deregister(poll)
+    fn deregister(&mut self, poll: &Registry) -> std::io::Result<()> {
+        SourceFd(&self.pollfd).deregister(poll)
     }
 }

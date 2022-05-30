@@ -23,7 +23,7 @@ impl BtSocket {
     /// This function can block for some seconds.
     pub fn connect(&mut self, addr: BtAddr) -> Result<(), BtError> {
         // Create temporary `mio` event loop
-        let evtloop = mio::Poll::new().unwrap();
+        let mut evtloop = mio::Poll::new().unwrap();
         let token = mio::Token(0);
         let mut events = mio::Events::with_capacity(2);
 
@@ -36,9 +36,8 @@ impl BtSocket {
                     let mut event_received = false;
                     while !event_received {
                         // Register this, single, event source
-                        evtloop
-                            .register(evented, token, interest, mio::PollOpt::oneshot())
-                            .unwrap();
+                        // todo: deregister?
+                        evtloop.registry().register(evented, token, interest).unwrap();
 
                         // Wait for it to transition to the requested state
                         evtloop.poll(&mut events, None).unwrap();
@@ -46,7 +45,7 @@ impl BtSocket {
                         for event in events.iter() {
                             if event.token() == token {
                                 event_received = true;
-                                evtloop.deregister(evented).unwrap();
+                                evtloop.registry().deregister(evented).unwrap();
                             }
                         }
                     }
@@ -77,28 +76,16 @@ impl From<platform::BtSocket> for BtSocket {
     }
 }
 
-impl mio::Evented for BtSocket {
-    fn register(
-        &self,
-        poll: &mio::Poll,
-        token: mio::Token,
-        interest: mio::Ready,
-        opts: mio::PollOpt,
-    ) -> std::io::Result<()> {
-        self.0.register(poll, token, interest, opts)
+impl mio::event::Source for BtSocket {
+    fn register(&mut self, poll: &mio::Registry, token: mio::Token, interest: mio::Interest) -> std::io::Result<()> {
+        self.0.register(poll, token, interest)
     }
 
-    fn reregister(
-        &self,
-        poll: &mio::Poll,
-        token: mio::Token,
-        interest: mio::Ready,
-        opts: mio::PollOpt,
-    ) -> std::io::Result<()> {
-        self.0.reregister(poll, token, interest, opts)
+    fn reregister(&mut self, poll: &mio::Registry, token: mio::Token, interest: mio::Interest) -> std::io::Result<()> {
+        self.0.reregister(poll, token, interest)
     }
 
-    fn deregister(&self, poll: &mio::Poll) -> std::io::Result<()> {
+    fn deregister(&mut self, poll: &mio::Registry) -> std::io::Result<()> {
         self.0.deregister(poll)
     }
 }
@@ -123,7 +110,7 @@ impl Write for BtSocket {
 #[allow(missing_debug_implementations)] // `&mio::Evented` doesn't do `Debug`
 pub enum BtAsync<'a> {
     /// Caller needs to wait for the given `Evented` object to reach the given `Ready` state
-    WaitFor(&'a dyn mio::Evented, mio::Ready),
+    WaitFor(&'a mut dyn mio::event::Source, mio::Interest),
 
     /// Asynchronous transaction has completed
     Done,

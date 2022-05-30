@@ -1,9 +1,7 @@
 use bluetooth_serial_port::{BtProtocol, BtSocket};
-use mio::{Poll, PollOpt, Ready, Token};
-use std::{
-    io::{Read, Write},
-    time,
-};
+use std::io::{Read, Write};
+use std::time;
+use mio::{Poll, Token, Interest};
 
 fn main() {
     // scan for devices
@@ -37,12 +35,6 @@ fn main() {
 
     // BtSocket also implements `mio::Evented` for async IO
     let poll = Poll::new().unwrap();
-    poll.register(
-        &socket,
-        Token(0),
-        Ready::readable() | Ready::writable(),
-        PollOpt::edge() | PollOpt::oneshot(),
-    )
-    .unwrap();
+    poll.registry().register(&mut socket, Token(0), Interest::READABLE | Interest::WRITABLE).unwrap();
     // loop { ... poll events and wait for socket to be readable/writable ... }
 }
