@@ -22,7 +22,7 @@ BtSocket::connect_async()
 BtSocket::read()
 BtSocket::write()
 
-impl mio::Evented for BtSocket { ... } // for async IO with mio
+impl mio::event::Source for BtSocket { ... } // for async IO with mio
 ```
 
 [Click here](examples/example.rs) for full example.
